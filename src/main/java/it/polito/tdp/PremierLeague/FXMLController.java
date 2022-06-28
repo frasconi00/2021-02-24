@@ -8,6 +8,7 @@ package it.polito.tdp.PremierLeague;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.PremierLeague.model.GiocatoreMigliore;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Model;
 import javafx.event.ActionEvent;
@@ -47,17 +48,53 @@ public class FXMLController {
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	txtResult.clear();
     	
+    	Match match = this.cmbMatch.getValue();
+    	if(match==null) {
+    		txtResult.setText("Devi selezionare un match per creare il grafo!");
+    		return;
+    	}
+    	
+    	this.model.creaGrafo(match.getMatchID());
+    	
+    	txtResult.setText("Grafo creato");
+    	txtResult.appendText("\n#VERTICI: "+this.model.nVertici());
+    	txtResult.appendText("\n#ARCHI: "+this.model.nArchi());
     }
 
     @FXML
-    void doGiocatoreMigliore(ActionEvent event) {    	
+    void doGiocatoreMigliore(ActionEvent event) {  
+    	txtResult.clear();
+    	
+    	if(!this.model.grafoCreato()) {
+    		txtResult.appendText("Devi prima creare il grafo!\n");
+    		return;
+    	}
+    	
+    	GiocatoreMigliore g = this.model.trovaGiocatoreMigliore();
+    	txtResult.appendText("Giocatore migliore:\n");
+    	txtResult.appendText(g.getPlayer().getPlayerID()+" - "+g.getPlayer().getName()+", delta efficienza: "+g.getDeltaMigliore());
     	
     }
     
     @FXML
     void doSimula(ActionEvent event) {
-
+    	
+    	if(!this.model.grafoCreato()) {
+    		txtResult.appendText("Devi prima creare il grafo!\n");
+    		return;
+    	}
+    	
+    	Match m = cmbMatch.getValue();
+    	try {
+    		int N = Integer.parseInt(this.txtN.getText());
+    		String s = this.model.simula(m, N);
+    		txtResult.appendText(s);
+    	} catch(NumberFormatException e) {
+    		txtResult.setText("Inserisci un numero N intero di azioni salienti");
+    		return;
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -73,5 +110,8 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.cmbMatch.getItems().clear();
+    	this.cmbMatch.getItems().addAll(this.model.listAllMatches());
     }
 }

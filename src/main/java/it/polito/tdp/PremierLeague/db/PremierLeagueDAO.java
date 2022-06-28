@@ -7,12 +7,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Adiacenza;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
 
 public class PremierLeagueDAO {
-	
+	/*
 	public List<Player> listAllPlayers(){
 		String sql = "SELECT * FROM Players";
 		List<Player> result = new ArrayList<Player>();
@@ -34,7 +35,7 @@ public class PremierLeagueDAO {
 			return null;
 		}
 	}
-	
+	*/
 	public List<Team> listAllTeams(){
 		String sql = "SELECT * FROM Teams";
 		List<Team> result = new ArrayList<Team>();
@@ -100,6 +101,60 @@ public class PremierLeagueDAO {
 				
 				
 				result.add(match);
+
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List<Player> getVertici(int matchID) {
+		
+		String sql="SELECT p.PlayerID, p.Name, a.TeamID "
+				+ "FROM actions a, players p "
+				+ "WHERE a.PlayerID = p.PlayerID AND a.MatchID = ?";
+		List<Player> result = new ArrayList<Player>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, matchID);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				Player player = new Player(res.getInt("p.PlayerID"), res.getString("p.Name"),res.getInt("a.TeamID"));
+				result.add(player);
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	
+	public List<Adiacenza> getAdiacenze(int matchID) {
+		String sql="SELECT a1.PlayerID, a2.PlayerID, a1.TotalSuccessfulPassesAll, a2.TotalSuccessfulPassesAll, a1.Assists, a2.Assists, a1.TimePlayed, a2.TimePlayed "
+				+ "FROM actions a1, actions a2 "
+				+ "WHERE a1.MatchID = a2.MatchID AND a1.MatchID = ? "
+				+ "AND a1.TeamID > a2.TeamID";
+		List<Adiacenza> result = new ArrayList<Adiacenza>();
+		Connection conn = DBConnect.getConnection();
+		
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, matchID);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				double efficienza1 = ((double)((double)(res.getInt("a1.TotalSuccessfulPassesAll")+res.getInt("a1.Assists")))/((double)(res.getInt("a1.TimePlayed"))));
+				double efficienza2 = ((double)((double)(res.getInt("a2.TotalSuccessfulPassesAll")+res.getInt("a2.Assists")))/((double)(res.getInt("a2.TimePlayed"))));
+				
+				result.add(new Adiacenza(res.getInt("a1.PlayerID"), res.getInt("a2.PlayerID"), efficienza1, efficienza2));
 
 			}
 			conn.close();
